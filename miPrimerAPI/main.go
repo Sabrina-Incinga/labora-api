@@ -52,6 +52,18 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 
 func createItem(w http.ResponseWriter, r *http.Request) {
     // TODO Función para crear un nuevo elemento
+	var item Item
+    err := json.NewDecoder(r.Body).Decode(&item)
+    defer r.Body.Close()
+
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+	items = append(items, item)
+
+	w.Write([]byte("Item creado correctamente"))
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +92,7 @@ func getItemByName(w http.ResponseWriter, r *http.Request){
 func main(){
 	router := mux.NewRouter()
 
-	names := []string {"Pepe", "Lucio", "Jorge", "Federico", "Juana", "Cecilia", "Gerónimo", "Helena", "Francisca", "Prudencia"}
+	names := []string {"Auriculares", "Auriculares Bluetooth", "Teclado", "Monitor", "Mouse pad", "Mouse", "Parlante Bluetooth", "Helena", "Francisca", "Prudencia"}
 
 	for i := 0; i < len(names); i++ {
 		items[i] = Item{ID: strconv.Itoa(i), Name: names[i]}
