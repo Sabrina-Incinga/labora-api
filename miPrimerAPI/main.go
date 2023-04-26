@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -16,12 +17,14 @@ type Item struct {
 var items []Item = make([] Item, 10)
 
 func getItems(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	itemsJson, _ := json.Marshal(items)
 	w.Write(itemsJson)
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 
 	var itemBuscado *Item
@@ -59,6 +62,21 @@ func deleteItem(w http.ResponseWriter, r *http.Request) {
     // TODO Función para eliminar un elemento
 }
 
+func getItemByName(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	variables := r.URL.Query()
+	name := variables.Get("name")
+
+	for _, item := range items {
+		if strings.ToLower(item.Name) == strings.ToLower(name) {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+
+	json.NewEncoder(w).Encode(&Item{})
+}
+
 func main(){
 	router := mux.NewRouter()
 
@@ -70,6 +88,7 @@ func main(){
 
 	router.HandleFunc("/items", getItems).Methods("GET")
 	router.HandleFunc("/items/{id}", getItem).Methods("GET")
+	router.HandleFunc("/itemsbyname", getItemByName).Methods("GET")
 
     router.HandleFunc("/items", createItem).Methods("POST")
     router.HandleFunc("/items/{id}", updateItem).Methods("PUT")
