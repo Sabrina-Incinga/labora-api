@@ -28,6 +28,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	var itemBuscado *Item
+	var itemBuscadoNoPuntero Item
 
 	for i := 0; i < len(items); i++ {
 		if items[i].ID == vars["id"] {
@@ -39,14 +40,18 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	if itemBuscado == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Item no encontrado"))
+		return
 	}
 
+	itemBuscadoNoPuntero = *itemBuscado
 	itemJson, err := json.Marshal(itemBuscado)
+	itemNoPuntero, err := json.Marshal(itemBuscadoNoPuntero)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("No se pudo convertir el elemento encontrado"))
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write(itemNoPuntero)
 	w.Write(itemJson)
 }
 
