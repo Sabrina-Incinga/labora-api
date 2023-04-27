@@ -51,7 +51,6 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func createItem(w http.ResponseWriter, r *http.Request) {
-    // TODO Función para crear un nuevo elemento
 	var item Item
     err := json.NewDecoder(r.Body).Decode(&item)
     defer r.Body.Close()
@@ -67,11 +66,43 @@ func createItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request) {
-    // TODO Función para actualizar un elemento existente
+	vars := mux.Vars(r)
+	var itemUpdate Item
+    err := json.NewDecoder(r.Body).Decode(&itemUpdate)
+    defer r.Body.Close()
+	if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+	for i, item := range items {
+		if item.ID == vars["id"] {
+			items[i] = itemUpdate
+			w.Write([]byte("Item actualizado correctamente"))
+			return
+		}
+	}
+
+	w.Write([]byte("No se pudo actualizar el item"))
 }
 
 func deleteItem(w http.ResponseWriter, r *http.Request) {
     // TODO Función para eliminar un elemento
+	vars := mux.Vars(r)
+
+	for i, item := range items {
+		if item.ID == vars["id"] {
+			nuevoSlice := make([]Item, len(items)-1)
+
+    		nuevoSlice = append(items[:i], items[i+1:]...)
+
+			items = nuevoSlice
+			w.Write([]byte("Item eliminado correctamente"))
+			return
+		}
+	}
+
+	w.Write([]byte("Item no pudo ser eliminado"))
 }
 
 func getItemByName(w http.ResponseWriter, r *http.Request){
