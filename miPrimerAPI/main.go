@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -14,6 +17,13 @@ type Item struct {
     ID      string `json:"id"`
     Name    string `json:"name"`
 }
+
+type ItemDetails struct {
+	Item
+	Details string `json:"details"`
+}
+
+var detailedItems []ItemDetails
 
 var items []Item = make([] Item, 10)
 
@@ -64,6 +74,47 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	itemsJson, _ := json.Marshal(sliceToShow)
 	w.Write(itemsJson)
+}
+
+func getItemDetails(id string) ItemDetails {
+	// Simula la obtención de detalles desde una fuente externa con un time.Sleep
+	time.Sleep(2 * time.Millisecond)
+	var foundItem Item
+	for _, item := range items {
+		if item.ID == id {
+			foundItem = item
+			break
+		}
+	}
+	//Obviamente, aquí iria un SELECT si es SQL o un llamado a un servicio externo
+	//pero esta busqueda del item junto con Details, la hacemos a mano.
+	return ItemDetails{
+		Item:    foundItem, 
+		Details: fmt.Sprintf("Detalles para el item %s", id),
+	}
+}
+
+func getDetailedItems(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	wg := &sync.WaitGroup{}
+	detailsChannel := make(chan ItemDetails, len(items))
+	for _, item := range items{
+		wg.Add(1) // Creamos el escucha, sin aun crearse la gorutina
+		go func(id string) {
+			defer wg.Done() //Completamos el trabajo del escucha, al final de esta ejecución
+			detailsChannel <- getItemDetails(id)
+		}(item.ID)
+	}
+
+    go func() {
+		wg.Wait()
+		close(detailsChannel)
+	}()
+
+	for details := range detailsChannel {
+		detailedItems = append(detailedItems, details)
+	}
+	json.NewEncoder(w).Encode(detailedItems)
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
@@ -166,13 +217,14 @@ func getItemByName(w http.ResponseWriter, r *http.Request){
 func main(){
 	router := mux.NewRouter()
 
-	names := []string {"Auriculares", "Auriculares Bluetooth", "Teclado", "Monitor", "Mouse pad", "Mouse", "Parlante Bluetooth", "Helena", "Francisca", "Prudencia"}
+	names := []string {"Auriculares", "Auriculares Bluetooth", "Teclado", "Monitor", "Mouse pad", "Mouse", "Parlante Bluetooth", "Micrófono", "Xbox", "Play Station 5"}
 
 	for i := 0; i < len(names); i++ {
 		items[i] = Item{ID: strconv.Itoa(i), Name: names[i]}
 	}
 
 	router.HandleFunc("/items", getItems).Methods("GET")
+	router.HandleFunc("/items/details", getDetailedItems).Methods("GET")
 	router.HandleFunc("/items/{id}", getItem).Methods("GET")
 	router.HandleFunc("/itemsbyname", getItemByName).Methods("GET")
 
