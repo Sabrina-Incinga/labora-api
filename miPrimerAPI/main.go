@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,8 +19,50 @@ var items []Item = make([] Item, 10)
 
 func getItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	variables := r.URL.Query()
+	pageStr := variables.Get("page")
+	itemsPerPageStr := variables.Get("itemsPerPage")
+	var page, itemsPerPage int
+	var err error
+	if pageStr == ""{
+		page = 0
+	} else{
+		page, err = strconv.Atoi(pageStr)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error al convertir página a int"))
+			return
+		}
+	}
+
+	if pageStr == ""{
+		itemsPerPage = 5
+	} else{
+		itemsPerPage, err = strconv.Atoi(itemsPerPageStr)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error al convertir cantidad de ítems por página a int"))
+			return
+		}
+	}
+
+	var sliceToShow []Item 
+	init := page*itemsPerPage
+	limit := itemsPerPage*(page+1)
+	nroPage := float64(len(items)) / float64(itemsPerPage)
+    nroPage = math.Ceil(nroPage)
+	if page <= int(nroPage) {
+		if limit <= len(items) {
+			sliceToShow = items[init:limit]
+		} else{
+			sliceToShow = items[init:]
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
-	itemsJson, _ := json.Marshal(items)
+	itemsJson, _ := json.Marshal(sliceToShow)
 	w.Write(itemsJson)
 }
 
@@ -27,31 +70,27 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 
-	var itemBuscado *Item
-	var itemBuscadoNoPuntero Item
+	var searchedItem *Item
 
 	for i := 0; i < len(items); i++ {
 		if items[i].ID == vars["id"] {
-			itemBuscado = &items[i]
+			searchedItem = &items[i]
 			break
 		}
 	}
 
-	if itemBuscado == nil {
+	if searchedItem == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Item no encontrado"))
 		return
 	}
 
-	itemBuscadoNoPuntero = *itemBuscado
-	itemJson, err := json.Marshal(itemBuscado)
-	itemNoPuntero, err := json.Marshal(itemBuscadoNoPuntero)
+	itemJson, err := json.Marshal(searchedItem)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("No se pudo convertir el elemento encontrado"))
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(itemNoPuntero)
 	w.Write(itemJson)
 }
 
@@ -92,16 +131,15 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteItem(w http.ResponseWriter, r *http.Request) {
-    // TODO Función para eliminar un elemento
 	vars := mux.Vars(r)
 
 	for i, item := range items {
 		if item.ID == vars["id"] {
-			nuevoSlice := make([]Item, len(items)-1)
+			newSlice := make([]Item, len(items)-1)
 
-    		nuevoSlice = append(items[:i], items[i+1:]...)
+    		newSlice = append(items[:i], items[i+1:]...)
 
-			items = nuevoSlice
+			items = newSlice
 			w.Write([]byte("Item eliminado correctamente"))
 			return
 		}
