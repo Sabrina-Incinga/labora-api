@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -76,34 +77,45 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 	w.Write(itemsJson)
 }
 
-func getItemDetails(id string) ItemDetails {
+func getItemDetails(id string) (ItemDetails, error) {
 	// Simula la obtención de detalles desde una fuente externa con un time.Sleep
 	time.Sleep(2 * time.Millisecond)
-	var foundItem Item
+	var foundItem *Item = nil
 	for _, item := range items {
 		if item.ID == id {
-			foundItem = item
+			foundItem = &item
 			break
 		}
+	}
+
+	if foundItem == nil{
+		return ItemDetails{}, errors.New("Detalles del item no encontrado")
 	}
 	//Obviamente, aquí iria un SELECT si es SQL o un llamado a un servicio externo
 	//pero esta busqueda del item junto con Details, la hacemos a mano.
 	return ItemDetails{
-		Item:    foundItem, 
+		Item:    *foundItem, 
 		Details: fmt.Sprintf("Detalles para el item %s", id),
-	}
+	}, nil
 }
 
 func getDetailedItems(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	wg := &sync.WaitGroup{}
 	detailsChannel := make(chan ItemDetails, len(items))
-	for _, item := range items{
+	itemIds := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"} //slice con ids de items para forzar error con ids inexistentes
+	for _, item := range itemIds{
 		wg.Add(1) // Creamos el escucha, sin aun crearse la gorutina
 		go func(id string) {
 			defer wg.Done() //Completamos el trabajo del escucha, al final de esta ejecución
-			detailsChannel <- getItemDetails(id)
-		}(item.ID)
+			detailedItem, err := getItemDetails(id)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			
+			detailsChannel <- detailedItem
+		}(item)
 	}
 
     go func() {
