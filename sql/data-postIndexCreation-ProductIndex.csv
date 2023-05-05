@@ -1,0 +1,6 @@
+"QUERY PLAN"
+"Seq Scan on items  (cost=0.00..1.09 rows=1 width=778) (actual time=0.033..0.035 rows=2 loops=1)"
+"  Filter: ((product)::text = 'Florero'::text)"
+"  Rows Removed by Filter: 5"
+"Planning Time: 2.319 ms"
+"Execution Time: 0.056 ms"
