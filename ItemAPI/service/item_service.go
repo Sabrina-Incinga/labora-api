@@ -7,13 +7,7 @@ func GetAllItems() []model.Item {
 }
 
 func GetItemById(id int) *model.Item{
-	item :=  model.GetItemById(id)
-
-	if item == nil {
-		return nil
-	} 
-
-	return item
+	return model.GetItemById(id)
 }
 
 func CreateItem(dto model.ItemDTO) int64{
