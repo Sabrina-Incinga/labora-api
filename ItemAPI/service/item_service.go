@@ -1,23 +1,26 @@
 package service
 
-import "github.com/labora-api/ItemAPI/model"
+import (
+	"github.com/labora-api/ItemAPI/model"
+	"github.com/labora-api/ItemAPI/repository"
+)
 
 func GetAllItems() []model.Item {
-	return model.GetAll()
+	return repository.GetAll()
 }
 
 func GetItemById(id int) *model.Item{
-	return model.GetItemById(id)
+	return repository.GetItemById(id)
 }
 
 func CreateItem(dto model.ItemDTO) int64{
-	return model.Create(dto)
+	return repository.Create(dto)
 }
 
 func UpdateItem(dto model.ItemDTO, id int) bool{
-	return model.Update(dto, id) > 0
+	return repository.Update(dto, id) > 0
 }
 
 func DeleteItem(id int) bool{
-	return model.Delete(id) > 0
+	return repository.Delete(id) > 0
 }
