@@ -3,7 +3,9 @@ package repository
 import (
 	"database/sql"
 	"log"
+	"math"
 	"time"
+
 	"github.com/labora-api/ItemAPI/config"
 	"github.com/labora-api/ItemAPI/model"
 )
@@ -30,6 +32,8 @@ func GetAll() []model.Item {
 			log.Fatal(err)
 		}
 
+		item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
+
 		items = append(items, item)
 
 	}
@@ -51,6 +55,8 @@ func GetItemById(id int) *model.Item {
 			log.Fatal(err)
 		}
 	}
+
+	item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
 
 	return &item
 }
@@ -107,4 +113,10 @@ func Delete(id int) int64 {
 	}
 
 	return rowsAffected
+}
+
+func calculateTotalPrice(price float64, quantity int64) float64{
+	totalPrice := price * float64(quantity)
+
+	return math.Round(totalPrice*100)/100
 }
