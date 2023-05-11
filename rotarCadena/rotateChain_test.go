@@ -38,13 +38,11 @@ func TestRotateChainRight(t *testing.T){
 func BenchmarkRotateChainLeft(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		RotateChainLeft("ABC")
-		//Output: "CAB"
 	}
 }
 
 func BenchmarkRotateChainRight(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		RotateChainRight("BCA")
-		//Output: "CAB"
 	}
 }
