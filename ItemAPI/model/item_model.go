@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math"
 	"time"
 )
 
@@ -22,5 +23,11 @@ type ItemDTO struct {
 	Quantity      int     `json:"quantity"`
 	Price         float64 `json:"price"`
 	Details       *string `json:"details"`
+}
+
+func (i *Item) GetTotalPrice(){
+	totalPrice := i.Price * float64(i.Quantity)
+
+	i.TotalPrice = math.Round(totalPrice*100)/100
 }
 
