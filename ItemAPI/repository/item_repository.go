@@ -32,8 +32,9 @@ func GetAll() []model.Item {
 			log.Fatal(err)
 		}
 
-		item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
-
+		//item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
+		item.GetTotalPrice()
+		
 		items = append(items, item)
 
 	}
