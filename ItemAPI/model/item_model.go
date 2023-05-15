@@ -40,8 +40,3 @@ type ItemResponse struct {
 	Item      Item
 	ViewCount int
 }
-
-type ItemViews struct {
-	Id        string
-	ItemViews int
-}
