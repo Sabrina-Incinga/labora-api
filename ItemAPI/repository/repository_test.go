@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -35,4 +36,27 @@ func BenchmarkCalculateTotalPrice(b *testing.B) {
 func ExampleCalculateTotalPrice(){
 	fmt.Println(calculateTotalPrice(1150.10, 2))
 	//Output: 2300.2
+}
+
+func TestIncrementViewCount(t *testing.T) {
+	var wg sync.WaitGroup
+
+	initialViewCount := getViewCount(1)
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			GetItemById(1)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	finalViewCount := getViewCount(1)
+	
+	if finalViewCount != initialViewCount + 100 {
+		t.Errorf("El valor esperado %d difiere del obtenido %d", initialViewCount + 100, finalViewCount)
+	}
+	
 }

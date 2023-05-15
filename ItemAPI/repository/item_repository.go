@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/labora-api/ItemAPI/config"
@@ -12,7 +13,9 @@ import (
 
 var connection, error = config.GetConnection()
 
-func GetAll() []model.Item {
+var mu sync.Mutex
+
+func GetAll() model.ItemsResponse {
 	rows, err := connection.Query("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items")
 
 	if err != nil {
@@ -21,7 +24,9 @@ func GetAll() []model.Item {
 
 	defer rows.Close()
 
-	var items []model.Item = make([]model.Item, 0)
+	var ItemsResponse model.ItemsResponse
+	ItemsResponse.Items = make([]model.Item, 0)
+	ItemsResponse.ItemCount = getItemsCount()
 
 	for rows.Next() {
 		var item model.Item
@@ -34,30 +39,32 @@ func GetAll() []model.Item {
 
 		//item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
 		item.GetTotalPrice()
-		
-		items = append(items, item)
+
+		ItemsResponse.Items = append(ItemsResponse.Items, item)
 
 	}
 
-	return items
+	return ItemsResponse
 }
 
-func GetItemById(id int) *model.Item {
-	row := connection.QueryRow("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items WHERE id = $1", id)
+func GetItemById(id int) *model.ItemResponse {
+	incrementViewCount(id, &mu)
 
-	var item model.Item
+	row := connection.QueryRow(`SELECT id, customer_name, order_date, product, quantity, price, details, "viewCount"  FROM items WHERE id = $1`, id)
 
-	err := row.Scan(&item.ID, &item.Customer_name, &item.Order_date, &item.Product, &item.Quantity, &item.Price, &item.Details)
+	var item model.ItemResponse
+
+	err := row.Scan(&item.Item.ID, &item.Item.Customer_name, &item.Item.Order_date, &item.Item.Product, &item.Item.Quantity, &item.Item.Price, &item.Item.Details, &item.ViewCount)
 
 	if err != nil {
-		if err == sql.ErrNoRows{
+		if err == sql.ErrNoRows {
 			return nil
-		} else{
+		} else {
 			log.Fatal(err)
 		}
 	}
 
-	item.TotalPrice = calculateTotalPrice(item.Price, item.Quantity)
+	item.Item.TotalPrice = calculateTotalPrice(item.Item.Price, item.Item.Quantity)
 
 	return &item
 }
@@ -116,8 +123,59 @@ func Delete(id int) int64 {
 	return rowsAffected
 }
 
-func calculateTotalPrice(price float64, quantity int64) float64{
+func getItemsCount() int {
+	row := connection.QueryRow("SELECT count(id) FROM items")
+
+	var itemCount int
+
+	err := row.Scan(&itemCount)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return itemCount
+}
+
+func calculateTotalPrice(price float64, quantity int64) float64 {
 	totalPrice := price * float64(quantity)
 
-	return math.Round(totalPrice*100)/100
+	return math.Round(totalPrice*100) / 100
+}
+
+func incrementViewCount(id int, mu *sync.Mutex) int64 {
+	mu.Lock()
+	result, err := connection.Exec(`UPDATE public.items
+							SET "viewCount"= "viewCount"+1
+							WHERE id=$1;`, id)
+	mu.Unlock()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return rowsAffected
+}
+
+func getViewCount(id int) int{
+	row := connection.QueryRow(`SELECT  "viewCount"  FROM items WHERE id = $1`, id)
+
+	var viewCount int
+
+	err := row.Scan(&viewCount)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	return viewCount
 }

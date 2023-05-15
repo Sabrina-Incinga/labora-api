@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -17,6 +18,9 @@ func main() {
 	router.HandleFunc("/items/{id}", controller.DeleteItem).Methods("DELETE")
 
 
-	http.ListenAndServe(":8000", router)
-
+	err := http.ListenAndServe(":8000", router)
+	if err !=nil {
+		fmt.Println("Error de conexión a BD: ", err)
+	}
+	fmt.Println("Conectado en puerto 8000")
 }

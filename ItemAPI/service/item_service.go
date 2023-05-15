@@ -5,11 +5,11 @@ import (
 	"github.com/labora-api/ItemAPI/repository"
 )
 
-func GetAllItems() []model.Item {
+func GetAllItems() model.ItemsResponse {
 	return repository.GetAll()
 }
 
-func GetItemById(id int) *model.Item{
+func GetItemById(id int) *model.ItemResponse{
 	return repository.GetItemById(id)
 }
 
