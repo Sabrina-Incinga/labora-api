@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-
+	"github.com/rs/cors"
 	"github.com/gorilla/mux"
 	"github.com/labora-api/ItemAPI/controller"
 )
@@ -18,9 +18,14 @@ func main() {
 	router.HandleFunc("/items/{id}", controller.DeleteItem).Methods("DELETE")
 
 
-	err := http.ListenAndServe(":8000", router)
-	if err !=nil {
-		fmt.Println("Error de conexión a BD: ", err)
-	}
-	fmt.Println("Conectado en puerto 8000")
+	// Configurar el middleware CORS
+	corsOptions := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+	})
+
+	// Agregar el middleware CORS a todas las rutas
+	handler := corsOptions.Handler(router)
+
+	log.Fatal(http.ListenAndServe(":8000", handler))
 }

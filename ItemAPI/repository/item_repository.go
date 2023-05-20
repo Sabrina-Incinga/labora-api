@@ -15,8 +15,8 @@ var connection, error = config.GetConnection()
 
 var mu sync.Mutex
 
-func GetAll() model.ItemsResponse {
-	rows, err := connection.Query("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items")
+func GetAll(page int, itemsPerPage int) model.ItemsResponse {
+	rows, err := connection.Query("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items limit $1 offset $2 ", itemsPerPage, itemsPerPage*page)
 
 	if err != nil {
 		log.Fatal(err)

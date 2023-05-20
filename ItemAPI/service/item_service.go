@@ -5,8 +5,8 @@ import (
 	"github.com/labora-api/ItemAPI/repository"
 )
 
-func GetAllItems() model.ItemsResponse {
-	return repository.GetAll()
+func GetAllItems(page int, itemsPerPage int) model.ItemsResponse {
+	return repository.GetAll(page, itemsPerPage)
 }
 
 func GetItemById(id int) *model.ItemResponse{

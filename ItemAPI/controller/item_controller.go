@@ -14,8 +14,36 @@ import (
 
 func GetItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	variables := r.URL.Query()
+	pageStr := variables.Get("page")
+	itemsPerPageStr := variables.Get("itemsPerPage")
+	var page, itemsPerPage int
+	var err error
+	if pageStr == ""{
+		page = 0
+	} else{
+		page, err = strconv.Atoi(pageStr)
 
-	items := service.GetAllItems()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error al convertir página a int"))
+			return
+		}
+	}
+
+	if pageStr == ""{
+		itemsPerPage = 5
+	} else{
+		itemsPerPage, err = strconv.Atoi(itemsPerPageStr)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error al convertir cantidad de ítems por página a int"))
+			return
+		}
+	}
+
+	items := service.GetAllItems(page, itemsPerPage)
 
 	w.WriteHeader(http.StatusOK)
 	itemsJson, _ := json.Marshal(items)

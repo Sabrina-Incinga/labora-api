@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-type totalPriceTest struct{
-	price float64;
-	quantity int64;
-	expected float64;
+type totalPriceTest struct {
+	price    float64
+	quantity int64
+	expected float64
 }
 
 var totalPriceTests []totalPriceTest = []totalPriceTest{
@@ -19,9 +19,9 @@ var totalPriceTests []totalPriceTest = []totalPriceTest{
 	{1599, 10, 15990},
 }
 
-func TestCalculateTotalPrice(t *testing.T){
+func TestCalculateTotalPrice(t *testing.T) {
 	for _, test := range totalPriceTests {
-		if output:=calculateTotalPrice(test.price, test.quantity); output != test.expected {
+		if output := calculateTotalPrice(test.price, test.quantity); output != test.expected {
 			t.Errorf("El valor esperado %f difiere del obtenido %f", test.expected, output)
 		}
 	}
@@ -33,20 +33,21 @@ func BenchmarkCalculateTotalPrice(b *testing.B) {
 	}
 }
 
-func ExampleCalculateTotalPrice(){
+func ExampleCalculateTotalPrice() {
 	fmt.Println(calculateTotalPrice(1150.10, 2))
 	//Output: 2300.2
 }
 
 func TestIncrementViewCount(t *testing.T) {
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	initialViewCount := getViewCount(1)
 
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
-			GetItemById(1)
+			incrementViewCount(1, &mu)
 			wg.Done()
 		}()
 	}
@@ -54,9 +55,9 @@ func TestIncrementViewCount(t *testing.T) {
 	wg.Wait()
 
 	finalViewCount := getViewCount(1)
-	
-	if finalViewCount != initialViewCount + 100 {
-		t.Errorf("El valor esperado %d difiere del obtenido %d", initialViewCount + 100, finalViewCount)
+
+	if finalViewCount != initialViewCount+100 {
+		t.Errorf("El valor esperado %d difiere del obtenido %d", initialViewCount+100, finalViewCount)
 	}
-	
+
 }
