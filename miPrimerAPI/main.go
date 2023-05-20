@@ -17,6 +17,7 @@ import (
 type Item struct {
     ID      string `json:"id"`
     Name    string `json:"name"`
+	ViewCount int  `json:"viewCount"`
 }
 
 type ItemDetails struct {
@@ -25,6 +26,8 @@ type ItemDetails struct {
 }
 
 var detailedItems []ItemDetails
+
+var mutex sync.Mutex
 
 var items []Item = make([] Item, 10)
 
@@ -133,16 +136,10 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 
-	var searchedItem *Item
 
-	for i := 0; i < len(items); i++ {
-		if items[i].ID == vars["id"] {
-			searchedItem = &items[i]
-			break
-		}
-	}
-
-	if searchedItem == nil {
+	searchedItem := getItemById(vars["id"])
+	shouldReturn := searchedItem == nil
+	if shouldReturn {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Item no encontrado"))
 		return
@@ -155,6 +152,27 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(itemJson)
+}
+
+func getItemById(id string) *Item {
+	var searchedItem *Item
+	for i := 0; i < len(items); i++ {
+		if items[i].ID == id {
+			searchedItem = &items[i]
+			break
+		}
+	}
+
+	if searchedItem == nil {
+		return nil
+	}
+
+	
+	mutex.Lock()
+	searchedItem.ViewCount++
+	mutex.Unlock()
+
+	return searchedItem
 }
 
 func createItem(w http.ResponseWriter, r *http.Request) {
@@ -226,13 +244,13 @@ func getItemByName(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(&Item{})
 }
 
-func main(){
+/* func main2(){
 	router := mux.NewRouter()
 
 	names := []string {"Auriculares", "Auriculares Bluetooth", "Teclado", "Monitor", "Mouse pad", "Mouse", "Parlante Bluetooth", "Micrófono", "Xbox", "Play Station 5"}
 
 	for i := 0; i < len(names); i++ {
-		items[i] = Item{ID: strconv.Itoa(i), Name: names[i]}
+		items[i] = Item{ID: strconv.Itoa(i), Name: names[i], ViewCount: 0}
 	}
 
 	router.HandleFunc("/items", getItems).Methods("GET")
@@ -245,4 +263,26 @@ func main(){
     router.HandleFunc("/items/{id}", deleteItem).Methods("DELETE")
 
 	http.ListenAndServe(":8000", router)
+} */
+
+func main(){
+	var wg sync.WaitGroup
+	//var mu sync.Mutex
+
+	item := items[3]
+	initialViewCount := item.ViewCount
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			getItemById(item.ID)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	finalViewCount := item.ViewCount
+
+	fmt.Printf("El valor esperado %d difiere del obtenido %d", initialViewCount+100, finalViewCount)
 }
