@@ -1,6 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom"
 import './App.css'
-import ItemsComponent from './features/item/items.component';
+import ItemsComponent from './features/item/items.component'
 
 
 function App() {

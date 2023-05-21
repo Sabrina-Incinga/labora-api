@@ -8,3 +8,12 @@ export interface item {
 	details: string,
 	total_price: number
 }
+
+export interface itemDTO{
+	name: string,  
+	order_date: string, 
+	product: string,  
+	quantity: number,     
+	price: number, 
+	details: string, 
+}

@@ -4,7 +4,7 @@ interface Props {
     children: ReactNode;
 }
 
-export const CardContent: FC<Props> = ({ children }) => {
+export const CardContent: FC<Props> = ({ children }:Props) => {
   return <div className="card-body">
             {children}
         </div>
