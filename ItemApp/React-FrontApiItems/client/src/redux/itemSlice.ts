@@ -1,27 +1,26 @@
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
 import { item, itemDTO } from '../features/types/item.types'
-import { getItems } from '../features/item/item.endpoints'
+import { deleteItemRequest, getItems, updateItemRequest } from '../features/item/item.endpoints'
 
 export const fetchItems = createAsyncThunk("/fetchItems", 
     async ({page, itemsPerPage}:{page: number, itemsPerPage: number}) => {
-        const response = await getItems(page, itemsPerPage)
+        const res = await getItems(page, itemsPerPage)
 
-        return response
+        return res
     }
 )
 export const deleteItem:any = createAsyncThunk("/deleteItem/{id}", 
     async (id:number) => {
-        const response = await deleteItem(id)
-        console.log(response);
+        const res = await deleteItemRequest(id)
         
-        return {response, id}
+        return {res, id}
     }
 )
 export const updateItem:any = createAsyncThunk("/updateItem/{id}", 
     async ({id, payload}:{id: number, payload: itemDTO}) => {
-        const response = await updateItem(id, payload)
+        const res = await updateItemRequest(id, payload)
 
-        return response
+        return {res, id}
     }
 )
 
@@ -73,10 +72,7 @@ export const itemSlice = createSlice({
         builder.addCase(deleteItem.fulfilled, (state, action) => {
             state.items = state.items.filter(item => item.id != action.payload.id)
             state.loading = false
-            state.response = action.payload.response
-        })
-        builder.addCase(deleteItem.pending, (state) => {
-            state.loading = true
+            state.response = action.payload.res
         })
         builder.addCase(deleteItem.rejected, (state, action) => {
             state.loading = false
@@ -84,7 +80,7 @@ export const itemSlice = createSlice({
         })
         builder.addCase(updateItem.fulfilled, (state, action) => {
             state.loading = false
-            state.response = action.payload.response
+            state.response = action.payload.res
         })
         builder.addCase(updateItem.pending, (state) => {
             state.loading = true

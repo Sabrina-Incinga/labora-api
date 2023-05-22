@@ -9,7 +9,7 @@ export async function getItems(page: number, itemsPerPage:number) {
     return await data
 }
 
-export async function updateItem(id: number, payload: itemDTO) {
+export async function updateItemRequest(id: number, payload: itemDTO) {
   const config = {
     method: "PUT",
     body: JSON.stringify(payload),
@@ -17,13 +17,13 @@ export async function updateItem(id: number, payload: itemDTO) {
     crossdomain: true,
     headers: { "Content-Type": "application/json" },
  }
-  const res = await fetch(`${endpoint}/${id}`, config)
-  const data = res.headers.get('X-Message')
+  const res = await fetch(`${endpoint}/update/${id}`, config)
+  const data = await res.text()
 
-  return data
+  return await data
 }
 
-export async function deleteItem(id: number) {
+export async function deleteItemRequest(id: number) {
   const config = {
     method: "DELETE",
     withCredentials: true,
@@ -31,8 +31,8 @@ export async function deleteItem(id: number) {
     headers: { "Content-Type": "application/json" },
   }
 
-  const res = await fetch(`${endpoint}/${id}`,config)
-  const data = res.headers.get('X-Message')
+  const res = await fetch(`${endpoint}/delete/${id}`,config)
+  const data = await res.text()
 
-  return data
+  return await data
 }

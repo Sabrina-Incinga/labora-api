@@ -1,7 +1,7 @@
 import { FC } from "react"
 import { useAppDispatch } from "../../../../hooks/hooks"
 import {  itemDTO } from '../features/types/item.types'
-import { updateItem } from "../../item.endpoints"
+import { updateItemRequest } from "../../item.endpoints"
 
 interface WrappedComponentProps  {
     text: string

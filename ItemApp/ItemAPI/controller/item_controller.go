@@ -12,7 +12,11 @@ import (
 	"github.com/labora-api/ItemAPI/service"
 )
 
-func GetItems(w http.ResponseWriter, r *http.Request) {
+type ItemController struct {
+    ItemServiceImpl service.ItemService
+}
+
+func (c *ItemController) GetItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	variables := r.URL.Query()
 	pageStr := variables.Get("page")
@@ -43,14 +47,14 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := service.GetAllItems(page, itemsPerPage)
+	items := c.ItemServiceImpl.GetAllItems(page, itemsPerPage)
 
 	w.WriteHeader(http.StatusOK)
 	itemsJson, _ := json.Marshal(items)
 	w.Write(itemsJson)
 }
 
-func GetById(w http.ResponseWriter, r *http.Request){
+func (c *ItemController) GetById(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
@@ -61,7 +65,7 @@ func GetById(w http.ResponseWriter, r *http.Request){
 		log.Fatal(err)
 	}
 
-	item := service.GetItemById(id)
+	item := c.ItemServiceImpl.GetItemById(id)
 
 	if item == nil {
 		w.WriteHeader(http.StatusOK)
@@ -73,7 +77,7 @@ func GetById(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(item)
 }
 
-func CreateItem(w http.ResponseWriter, r *http.Request){
+func (c *ItemController) CreateItem(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 
 	var dto model.ItemDTO
@@ -86,7 +90,7 @@ func CreateItem(w http.ResponseWriter, r *http.Request){
         return
 	}
 
-	id := service.CreateItem(dto)
+	id := c.ItemServiceImpl.CreateItem(dto)
 
 	if id != 0 {
 		w.WriteHeader(http.StatusCreated)
@@ -97,7 +101,7 @@ func CreateItem(w http.ResponseWriter, r *http.Request){
 	}
 }
 
-func UpdateItem(w http.ResponseWriter, r *http.Request){
+func (c *ItemController) UpdateItem(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 
 	var dto model.ItemDTO
@@ -119,18 +123,18 @@ func UpdateItem(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	result := service.UpdateItem(dto, id)
+	result := c.ItemServiceImpl.UpdateItem(dto, id)
 
 	if result {
-		w.Header().Set("X-Message", fmt.Sprintf("Objeto con id: %d actualizado correctamente", id))
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("Objeto con id: %d actualizado correctamente", id)))	
 	} else{
-		w.Header().Set("X-Message",  "No fue posible actualizar el item solicitado")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("No fue posible actualizar el item solicitado")))	
 	}
 }
 
-func DeleteItem(w http.ResponseWriter, r *http.Request){
+func (c *ItemController) DeleteItem(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
@@ -140,13 +144,13 @@ func DeleteItem(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	result := service.DeleteItem(id)
+	result := c.ItemServiceImpl.DeleteItem(id)
 
 	if result {
-		w.Header().Set("X-Message", fmt.Sprintf("Objeto con id: %d eliminado correctamente", id))
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("Objeto con id: %d eliminado correctamente", id)))	
 	} else{
-		w.Header().Set("X-Message",  "No fue posible eliminar el item solicitado")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("No fue posible eliminar el item solicitado")))	
 	}
 }

@@ -6,17 +6,17 @@ import (
 	"math"
 	"sync"
 	"time"
-
-	"github.com/labora-api/ItemAPI/config"
 	"github.com/labora-api/ItemAPI/model"
 )
 
-var connection, error = config.GetConnection()
+type PostgresDBHandler struct {
+	Db *sql.DB
+}
 
 var mu sync.Mutex
 
-func GetAll(page int, itemsPerPage int) model.ItemsResponse {
-	rows, err := connection.Query("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items limit $1 offset $2 ", itemsPerPage, itemsPerPage*page)
+func (p *PostgresDBHandler) GetAll(page int, itemsPerPage int) model.ItemsResponse {
+	rows, err := p.Db.Query("SELECT id, customer_name, order_date, product, quantity, price, details  FROM items limit $1 offset $2 ", itemsPerPage, itemsPerPage*page)
 
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +26,7 @@ func GetAll(page int, itemsPerPage int) model.ItemsResponse {
 
 	var ItemsResponse model.ItemsResponse
 	ItemsResponse.Items = make([]model.Item, 0)
-	ItemsResponse.ItemCount = getItemsCount()
+	ItemsResponse.ItemCount = p.getItemsCount()
 
 	for rows.Next() {
 		var item model.Item
@@ -47,10 +47,10 @@ func GetAll(page int, itemsPerPage int) model.ItemsResponse {
 	return ItemsResponse
 }
 
-func GetItemById(id int) *model.ItemResponse {
-	incrementViewCount(id, &mu)
+func (p *PostgresDBHandler) GetItemById(id int) *model.ItemResponse {
+	p.incrementViewCount(id, &mu)
 
-	row := connection.QueryRow(`SELECT id, customer_name, order_date, product, quantity, price, details, "viewCount"  FROM items WHERE id = $1`, id)
+	row := p.Db.QueryRow(`SELECT id, customer_name, order_date, product, quantity, price, details, "viewCount"  FROM items WHERE id = $1`, id)
 
 	var item model.ItemResponse
 
@@ -64,19 +64,19 @@ func GetItemById(id int) *model.ItemResponse {
 		}
 	}
 
-	item.Item.TotalPrice = calculateTotalPrice(item.Item.Price, item.Item.Quantity)
+	item.Item.TotalPrice = p.calculateTotalPrice(item.Item.Price, item.Item.Quantity)
 
 	return &item
 }
 
-func Create(item model.ItemDTO) int64 {
+func (p *PostgresDBHandler) Create(item model.ItemDTO) int64 {
 	var id int64
 	orderDate, err := time.Parse("2006-01-02", *item.Order_date)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	row := connection.QueryRow(`INSERT INTO public.items(
+	row := p.Db.QueryRow(`INSERT INTO public.items(
 								 customer_name, order_date, product, quantity, price, details)
 								VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`, item.Customer_name, orderDate, item.Product, item.Quantity, item.Price, item.Details)
 
@@ -85,13 +85,13 @@ func Create(item model.ItemDTO) int64 {
 	return id
 }
 
-func Update(dto model.ItemDTO, id int) int64 {
+func (p *PostgresDBHandler) Update(dto model.ItemDTO, id int) int64 {
 	orderDate, err := time.Parse("2006-01-02", *dto.Order_date)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result, err := connection.Exec(`UPDATE public.items
+	result, err := p.Db.Exec(`UPDATE public.items
 				SET customer_name=$1, order_date=$2, product=$3, quantity=$4, price=$5, details=$6
 				WHERE id = $7;`, dto.Customer_name, orderDate, dto.Product, dto.Quantity, dto.Price, dto.Details, id)
 
@@ -107,8 +107,8 @@ func Update(dto model.ItemDTO, id int) int64 {
 	return rowsAffected
 }
 
-func Delete(id int) int64 {
-	result, err := connection.Exec(`DELETE FROM public.items
+func (p *PostgresDBHandler) Delete(id int) int64 {
+	result, err := p.Db.Exec(`DELETE FROM public.items
 									WHERE id = $1;`, id)
 
 	if err != nil {
@@ -123,8 +123,8 @@ func Delete(id int) int64 {
 	return rowsAffected
 }
 
-func getItemsCount() int {
-	row := connection.QueryRow("SELECT count(id) FROM items")
+func (p *PostgresDBHandler) getItemsCount() int {
+	row := p.Db.QueryRow("SELECT count(id) FROM items")
 
 	var itemCount int
 
@@ -137,15 +137,15 @@ func getItemsCount() int {
 	return itemCount
 }
 
-func calculateTotalPrice(price float64, quantity int64) float64 {
+func (p *PostgresDBHandler) calculateTotalPrice(price float64, quantity int64) float64 {
 	totalPrice := price * float64(quantity)
 
 	return math.Round(totalPrice*100) / 100
 }
 
-func incrementViewCount(id int, mu *sync.Mutex) int64 {
+func (p *PostgresDBHandler) incrementViewCount(id int, mu *sync.Mutex) int64 {
 	mu.Lock()
-	result, err := connection.Exec(`UPDATE public.items
+	result, err := p.Db.Exec(`UPDATE public.items
 							SET "viewCount"= "viewCount"+1
 							WHERE id=$1;`, id)
 	mu.Unlock()
@@ -162,8 +162,8 @@ func incrementViewCount(id int, mu *sync.Mutex) int64 {
 	return rowsAffected
 }
 
-func getViewCount(id int) int{
-	row := connection.QueryRow(`SELECT  "viewCount"  FROM items WHERE id = $1`, id)
+func (p *PostgresDBHandler) getViewCount(id int) int {
+	row := p.Db.QueryRow(`SELECT  "viewCount"  FROM items WHERE id = $1`, id)
 
 	var viewCount int
 

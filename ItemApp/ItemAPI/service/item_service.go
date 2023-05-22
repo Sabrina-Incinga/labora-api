@@ -2,25 +2,29 @@ package service
 
 import (
 	"github.com/labora-api/ItemAPI/model"
-	"github.com/labora-api/ItemAPI/repository"
+	"github.com/labora-api/ItemAPI/repository/interfaces"
 )
 
-func GetAllItems(page int, itemsPerPage int) model.ItemsResponse {
-	return repository.GetAll(page, itemsPerPage)
+type ItemService struct {
+    DbHandler interfaces.DBHandler
 }
 
-func GetItemById(id int) *model.ItemResponse{
-	return repository.GetItemById(id)
+func (s *ItemService) GetAllItems(page int, itemsPerPage int) model.ItemsResponse {
+	return s.DbHandler.GetAll(page, itemsPerPage)
 }
 
-func CreateItem(dto model.ItemDTO) int64{
-	return repository.Create(dto)
+func (s *ItemService) GetItemById(id int) *model.ItemResponse{
+	return s.DbHandler.GetItemById(id)
 }
 
-func UpdateItem(dto model.ItemDTO, id int) bool{
-	return repository.Update(dto, id) > 0
+func (s *ItemService) CreateItem(dto model.ItemDTO) int64{
+	return s.DbHandler.Create(dto)
 }
 
-func DeleteItem(id int) bool{
-	return repository.Delete(id) > 0
+func (s *ItemService) UpdateItem(dto model.ItemDTO, id int) bool{
+	return s.DbHandler.Update(dto, id) > 0
+}
+
+func (s *ItemService) DeleteItem(id int) bool{
+	return s.DbHandler.Delete(id) > 0
 }
